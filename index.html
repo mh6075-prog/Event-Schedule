@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>디지털정책과 행사일정표</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      color: #1f2937;
+    }
+
+    .wrap {
+      max-width: 1680px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(30, 41, 59, 0.08);
+      border: 1px solid #e5e7eb;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+
+    .banner {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 22px;
+      padding: 20px 22px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 45%, #f5f3ff 100%);
+      border: 1px solid #c7d2fe;
+      min-height: 78px;
+    }
+
+    .banner-text {
+      text-align: center;
+      width: 100%;
+    }
+
+    .banner-text h1 {
+      margin: 0;
+      font-size: 30px;
+      color: #1e3a8a;
+    }
+
+    .today-chip {
+      position: absolute;
+      right: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #ffffff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.08);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .side-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .panel h2 {
+      font-size: 20px;
+      margin-bottom: 14px;
+      color: #0f172a;
+    }
+
+    .status {
+      margin-top: 10px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .helper-text {
+      margin-top: 10px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input, select, textarea, button {
+      font-size: 14px;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.18);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 84px;
+      width: 100%;
+    }
+
+    .memo-box textarea {
+      min-height: 220px;
+      background: #ffffff;
+    }
+
+    .ocr-textarea {
+      min-height: 180px;
+      font-size: 13px;
+      line-height: 1.5;
+      background: #ffffff;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      transition: 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    .primary-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+    .green-btn { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
+    .orange-btn { background: linear-gradient(135deg, #f59e0b, #ea580c); color: white; }
+    .red-btn { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+    .gray-btn { background: linear-gradient(135deg, #94a3b8, #64748b); color: white; }
+    .ghost-btn { background: #e5e7eb; color: #111827; }
+    .purple-btn { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+    .sky-btn { background: linear-gradient(135deg, #06b6d4, #0284c7); color: white; }
+    .blue-btn { background: linear-gradient(135deg, #0ea5e9, #2563eb); color: white; }
+    .small-btn { padding: 6px 10px; font-size: 12px; }
+
+    .link-box {
+      background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+      border: 1px solid #dbeafe;
+      border-radius: 16px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .summary {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin: 16px 0 18px 0;
+    }
+
+    .card {
+      flex: 1;
+      min-width: 160px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+    }
+
+    .card-title {
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .card strong {
+      font-size: 22px;
+      color: #0f172a;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    .filter-row input[type="text"] {
+      min-width: 220px;
+      flex: 1;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .calendar-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #1e3a8a;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .calendar-weekday {
+      background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+      color: #0f172a;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 12px;
+      font-size: 13px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .calendar-day {
+      min-height: 190px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid #dbeafe;
+      border-radius: 16px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: 0.18s ease;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.03);
+    }
+
+    .calendar-day:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.08);
+    }
+
+    .calendar-day.empty {
+      background: #f8fafc;
+      border: 1px dashed #d1d5db;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .today {
+      border: 2px solid #3b82f6;
+      background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
+    }
+
+    .holiday-day {
+      background: linear-gradient(180deg, #fff7ed 0%, #fffaf5 100%);
+      border-color: #fdba74;
+    }
+
+    .solar-date {
+      font-size: 15px;
+      font-weight: bold;
+      line-height: 1.2;
+    }
+
+    .lunar-date {
+      font-size: 11px;
+      color: #6b7280;
+      line-height: 1.2;
+    }
+
+    .holiday-name {
+      font-size: 11px;
+      color: #c2410c;
+      background: #ffedd5;
+      border-radius: 8px;
+      padding: 4px 6px;
+      font-weight: 700;
+      border: 1px solid #fed7aa;
+    }
+
+    .sun { color: #dc2626; }
+    .sat { color: #2563eb; }
+
+    .event-tag {
+      font-size: 11px;
+      border-radius: 10px;
+      padding: 6px 7px;
+      color: white;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    }
+
+    .event-tag:hover {
+      opacity: 0.88;
+    }
+
+    .priority-normal {
+      border-left: 4px solid rgba(255,255,255,0.45);
+    }
+
+    .priority-high {
+      border-left: 4px solid #fde68a;
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.18), 0 4px 10px rgba(15, 23, 42, 0.08);
+    }
+
+    .priority-top {
+      border-left: 4px solid #ffffff;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.22), 0 6px 14px rgba(15, 23, 42, 0.10);
+    }
+
+    .tag-policy { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .tag-operation { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+    .tag-network { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+    .tag-smart { background: linear-gradient(135deg, #fb923c, #ea580c); }
+    .tag-security { background: linear-gradient(135deg, #f43f5e, #be123c); }
+    .tag-default { background: linear-gradient(135deg, #64748b, #475569); }
+
+    .mini-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mini-item {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 13px;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
+    }
+
+    .mini-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+
+    .mini-meta {
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: white;
+    }
+
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 13px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #334155;
+    }
+
+    .action-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    }
+
+    .empty-box {
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .notice-item,
+    .share-item {
+      background: linear-gradient(180deg, #fffefc 0%, #fff7ed 100%);
+      border: 1px solid #fed7aa;
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+
+    .share-item {
+      background: linear-gradient(180deg, #f0f9ff 0%, #eff6ff 100%);
+      border: 1px solid #bae6fd;
+    }
+
+    .notice-title,
+    .share-title {
+      font-weight: 700;
+      color: #9a3412;
+      margin-bottom: 6px;
+    }
+
+    .share-title {
+      color: #0f4c81;
+    }
+
+    .notice-date,
+    .share-date {
+      font-size: 12px;
+      color: #78716c;
+      margin-bottom: 4px;
+    }
+
+    .share-date {
+      color: #475569;
+    }
+
+    .notice-text,
+    .share-text {
+      font-size: 13px;
+      color: #44403c;
+      white-space: pre-wrap;
+    }
+
+    .share-text {
+      color: #334155;
+    }
+
+    .notice-input,
+    .share-input {
+      margin-top: 10px;
+    }
+
+    .notice-input textarea,
+    .share-input textarea {
+      min-height: 90px;
+    }
+
+    .file-row {
+      margin-top: 8px;
+    }
+
+    .file-name {
+      font-size: 12px;
+      color: #475569;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+
+    .ocr-preview {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 760px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+      border: 1px solid #e5e7eb;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .close-btn {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .wrap {
+        box-shadow: none;
+        border: none;
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .modal,
+      .row button,
+      .orange-btn,
+      .red-btn,
+      .purple-btn,
+      .green-btn,
+      .primary-btn,
+      .sky-btn,
+      .blue-btn,
+      .status,
+      .helper-text {
+        display: none !important;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .calendar-day {
+        min-height: 120px;
+      }
+    }
+
+    @media (max-width: 1080px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .today-chip {
+        position: static;
+        transform: none;
+      }
+
+      .banner {
+        justify-content: center;
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .wrap {
+        padding: 16px;
+      }
+
+      .calendar-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .calendar-weekday {
+        display: none;
+      }
+
+      .calendar-day {
+        min-height: auto;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="banner">
+      <div class="banner-text">
+        <h1>디지털정책과 행사일정표</h1>
+      </div>
+      <div class="today-chip" id="todayChip"></div>
+    </div>
+
+    <div class="grid">
+      <div class="side-stack">
+        <div class="panel">
+          <h2>빠른 메뉴</h2>
+
+          <div class="row">
+            <button class="primary-btn" onclick="openModal()">행사 등록</button>
+            <button class="green-btn" onclick="downloadCSV()">엑셀 다운로드</button>
+            <button class="gray-btn" onclick="window.print()">인쇄</button>
+          </div>
+
+          <div class="status" id="saveStatus">저장 대기</div>
+        </div>
+
+        <div class="panel">
+          <h2>경주시청대표홈페이지</h2>
+
+          <div class="row">
+            <button class="sky-btn" onclick="openCitizenLink()">경주시청대표홈페이지 열기</button>
+          </div>
+
+          <div class="link-box">
+            <input type="text" id="citizenLinkInput" placeholder="경주시청 대표 홈페이지 주소를 입력하세요" style="width:100%;" />
+
+            <div class="row" style="margin-top:10px;">
+              <button class="primary-btn small-btn" onclick="saveCitizenLink()">링크 저장</button>
+            </div>
+          </div>
+
+          <div class="helper-text">
+            실제 홈페이지 주소는 담당자가 직접 입력해 저장하는 방식입니다.<br>
+            예: https://www.gyeongju.go.kr/open_content/ko/index.do
+          </div>
+
+          <div class="status" id="citizenLinkStatus">저장된 링크 없음</div>
+        </div>
+
+        <div class="panel">
+          <h2>이미지 일정 인식</h2>
+
+          <input type="file" id="ocrImageFile" accept="image/*" />
+
+          <div class="ocr-preview" id="ocrFileName">선택된 이미지 없음</div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="sky-btn" onclick="runOCR()">글자 읽기</button>
+            <button class="orange-btn" onclick="applyOCRToEventForm()">행사등록창에 넣기</button>
+            <button class="red-btn" onclick="clearOCRResult()">삭제</button>
+          </div>
+
+          <textarea id="ocrTextResult" class="ocr-textarea" placeholder="이미지에서 읽은 텍스트가 여기에 표시됩니다."></textarea>
+
+          <div class="status" id="ocrStatus">OCR 대기</div>
+        </div>
+
+        <div class="panel memo-box">
+          <h2>메모장</h2>
+          <textarea id="specialMemo" placeholder="메모를 입력하세요."></textarea>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="purple-btn" onclick="clearSpecialMemo()">메모 비우기</button>
+          </div>
+
+          <div class="status" id="memoSaveStatus">저장 대기</div>
+        </div>
+
+        <div class="panel">
+          <h2>공지사항</h2>
+
+          <div id="noticeList"></div>
+
+          <div class="notice-input">
+            <input type="text" id="noticeTitle" placeholder="공지 제목" style="width:100%; margin-bottom:8px;" />
+            <textarea id="noticeText" placeholder="공지 내용을 입력하세요."></textarea>
+            <div class="row" style="margin-top:10px;">
+              <button class="orange-btn" onclick="saveNotice()">공지 저장</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>정보공유</h2>
+
+          <div id="shareList"></div>
+
+          <div class="share-input">
+            <input type="text" id="shareTitle" placeholder="제목" style="width:100%; margin-bottom:8px;" />
+            <textarea id="shareText" placeholder="공유 내용을 입력하세요."></textarea>
+
+            <div class="file-row">
+              <input type="file" id="shareFile" />
+              <div class="file-name" id="shareSelectedFileName">선택된 파일 없음</div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <button class="sky-btn" onclick="saveShare()">정보공유 저장</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>오늘 행사</h2>
+          <div id="todayEventList" class="mini-list"></div>
+        </div>
+
+        <div class="panel">
+          <h2>이번 주 행사</h2>
+          <div id="weekEventList" class="mini-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>월간 행사 캘린더</h2>
+
+        <div class="filter-row">
+          <select id="filterDepartment" onchange="renderAll()">
+            <option value="전체">전체 팀</option>
+            <option value="디지털정책팀">디지털정책팀</option>
+            <option value="정보운영팀">정보운영팀</option>
+            <option value="정보통신팀">정보통신팀</option>
+            <option value="스마트통합운영팀">스마트통합운영팀</option>
+            <option value="디지털보안T/F팀">디지털보안T/F팀</option>
+          </select>
+
+          <input type="text" id="searchKeyword" placeholder="행사명, 담당자, 장소 검색" oninput="renderAll()" />
+
+          <button class="ghost-btn" onclick="resetFilter()">필터 초기화</button>
+        </div>
+
+        <div class="summary">
+          <div class="card">
+            <div class="card-title">이번 달 전체 행사</div>
+            <strong id="monthCount">0건</strong>
+          </div>
+
+          <div class="card">
+            <div class="card-title">오늘 행사</div>
+            <strong id="todayCount">0건</strong>
+          </div>
+
+          <div class="card">
+            <div class="card-title">중요 행사</div>
+            <strong id="importantCount">0건</strong>
+          </div>
+        </div>
+
+        <div class="calendar-header">
+          <div class="calendar-nav">
+            <button class="ghost-btn" onclick="changeMonth(-1)">◀ 이전달</button>
+            <div class="calendar-title" id="calendarTitle"></div>
+            <button class="ghost-btn" onclick="changeMonth(1)">다음달 ▶</button>
+          </div>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid"></div>
+
+        <h2 style="margin-top:24px;">행사 목록</h2>
+
+        <table>
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th>시간</th>
+              <th>행사명</th>
+              <th>팀</th>
+              <th>담당자</th>
+              <th>장소</th>
+              <th>중요도</th>
+              <th>링크</th>
+              <th>첨부파일명</th>
+              <th>비고</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="eventList"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="eventModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">행사 등록</div>
+        <button class="close-btn" onclick="closeModal()">닫기</button>
+      </div>
+
+      <div class="row">
+        <input type="date" id="eventDate" />
+        <input type="text" id="eventTitle" placeholder="행사명" style="flex:1;" />
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <input type="time" id="startTime" />
+        <input type="time" id="endTime" />
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <select id="department">
+          <option value="디지털정책팀">디지털정책팀</option>
+          <option value="정보운영팀">정보운영팀</option>
+          <option value="정보통신팀">정보통신팀</option>
+          <option value="스마트통합운영팀">스마트통합운영팀</option>
+          <option value="디지털보안T/F팀">디지털보안T/F팀</option>
+        </select>
+
+        <input type="text" id="manager" placeholder="담당자" />
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <input type="text" id="location" placeholder="장소" style="flex:1;" />
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <select id="importance">
+          <option value="보통">중요도: 보통</option>
+          <option value="높음">중요도: 높음</option>
+          <option value="매우높음">중요도: 매우 높음</option>
+        </select>
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <input type="text" id="eventLink" placeholder="관련 링크 주소" style="flex:1;" />
+        <button class="blue-btn" type="button" onclick="openEventLinkFromModal()">링크 열기</button>
+      </div>
+
+      <div class="row" style="margin-top:8px;">
+        <input type="text" id="eventFileName" placeholder="첨부파일명" style="flex:1;" />
+      </div>
+
+      <div style="margin-top:8px;">
+        <textarea id="eventMemo" placeholder="비고"></textarea>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button class="primary-btn" id="modalSaveBtn">저장</button>
+        <button class="red-btn" id="modalDeleteBtn" style="display:none;" onclick="deleteEventFromModal()">삭제</button>
+        <button class="gray-btn" onclick="closeModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      events: 'digitalPolicyEvents',
+      notices: 'digitalPolicyNotices',
+      shares: 'digitalPolicyShares',
+      memo: 'digitalPolicyMemo',
+      citizenLink: 'digitalPolicyCitizenRoundtableLink'
+    };
+
+    const LEGACY_KEYS = {
+      events: [
+        'digitalPolicyScheduleSimple',
+        'digitalPolicySchedulePretty',
+        'digitalPolicyScheduleSharedReady',
+        'digitalPolicyScheduleSimpleClean',
+        'digitalPolicyScheduleFileShare',
+        'digitalPolicyScheduleCentered'
+      ],
+      notices: [
+        'digitalPolicyNotices',
+        'digitalPolicyNoticesClean',
+        'digitalPolicyNoticesFileShare',
+        'digitalPolicyNoticesCentered'
+      ],
+      shares: [
+        'digitalPolicyShares',
+        'digitalPolicySharesFileShare',
+        'digitalPolicySharesCentered'
+      ],
+      memo: [
+        'digitalPolicySpecialMemo',
+        'digitalPolicySpecialMemoPretty',
+        'digitalPolicySpecialMemoSharedReady',
+        'digitalPolicySpecialMemoClean',
+        'digitalPolicySpecialMemoFileShare',
+        'digitalPolicySpecialMemoCentered'
+      ]
+    };
+
+    function readJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function firstLegacyValue(keys, fallback) {
+      for (const key of keys) {
+        const raw = localStorage.getItem(key);
+        if (raw !== null && raw !== '') {
+          try {
+            return JSON.parse(raw);
+          } catch (e) {
+            return raw;
+          }
+        }
+      }
+      return fallback;
+    }
+
+    function migrateStorage() {
+      const currentEvents = readJSON(STORAGE_KEYS.events, null);
+      const currentNotices = readJSON(STORAGE_KEYS.notices, null);
+      const currentShares = readJSON(STORAGE_KEYS.shares, null);
+      const currentMemo = localStorage.getItem(STORAGE_KEYS.memo);
+
+      if (currentEvents === null) {
+        const migrated = firstLegacyValue(LEGACY_KEYS.events, []);
+        localStorage.setItem(STORAGE_KEYS.events, JSON.stringify(migrated));
+      }
+
+      if (currentNotices === null) {
+        const migrated = firstLegacyValue(LEGACY_KEYS.notices, []);
+        localStorage.setItem(STORAGE_KEYS.notices, JSON.stringify(migrated));
+      }
+
+      if (currentShares === null) {
+        const migrated = firstLegacyValue(LEGACY_KEYS.shares, []);
+        localStorage.setItem(STORAGE_KEYS.shares, JSON.stringify(migrated));
+      }
+
+      if (currentMemo === null) {
+        const migratedMemo = firstLegacyValue(LEGACY_KEYS.memo, '');
+        localStorage.setItem(STORAGE_KEYS.memo, typeof migratedMemo === 'string' ? migratedMemo : '');
+      }
+    }
+
+    migrateStorage();
+
+    let events = readJSON(STORAGE_KEYS.events, []);
+    let notices = readJSON(STORAGE_KEYS.notices, []);
+    let shares = readJSON(STORAGE_KEYS.shares, []);
+
+    let currentDate = new Date();
+    let memoTimer = null;
+    let editTargetId = null;
+
+    const fallbackSolarHolidays = {
+      '01-01': '신정',
+      '03-01': '삼일절',
+      '05-05': '어린이날',
+      '06-06': '현충일',
+      '08-15': '광복절',
+      '10-03': '개천절',
+      '10-09': '한글날',
+      '12-25': '성탄절'
+    };
+
+    function formatDateKorean(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = dateObj.getMonth() + 1;
+      const d = dateObj.getDate();
+      const weeks = ['일', '월', '화', '수', '목', '금', '토'];
+      return `${y}년 ${m}월 ${d}일 (${weeks[dateObj.getDay()]})`;
+    }
+
+    function getDateString(dateObj) {
+      return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    }
+
+    function updateTodayChip() {
+      document.getElementById('todayChip').textContent = '오늘 ' + formatDateKorean(new Date());
+    }
+
+    function saveEvents() {
+      localStorage.setItem(STORAGE_KEYS.events, JSON.stringify(events));
+    }
+
+    function saveNotices() {
+      localStorage.setItem(STORAGE_KEYS.notices, JSON.stringify(notices));
+    }
+
+    function saveShares() {
+      localStorage.setItem(STORAGE_KEYS.shares, JSON.stringify(shares));
+    }
+
+    function normalizeUrl(url) {
+      const value = (url || '').trim();
+      if (!value) return '';
+      if (/^https?:\/\//i.test(value)) return value;
+      return 'https://' + value;
+    }
+
+    function saveCitizenLink() {
+      const input = document.getElementById('citizenLinkInput').value.trim();
+      if (!input) {
+        alert('링크 주소를 입력해 주세요.');
+        return;
+      }
+
+      const normalized = normalizeUrl(input);
+      localStorage.setItem(STORAGE_KEYS.citizenLink, normalized);
+      document.getElementById('citizenLinkInput').value = normalized;
+      updateCitizenLinkStatus();
+    }
+
+    function loadCitizenLink() {
+      const saved = localStorage.getItem(STORAGE_KEYS.citizenLink) || '';
+      document.getElementById('citizenLinkInput').value = saved;
+      updateCitizenLinkStatus();
+    }
+
+    function updateCitizenLinkStatus() {
+      const saved = localStorage.getItem(STORAGE_KEYS.citizenLink) || '';
+      document.getElementById('citizenLinkStatus').textContent = saved ? `저장된 링크: ${saved}` : '저장된 링크 없음';
+    }
+
+    function openCitizenLink() {
+      const saved = localStorage.getItem(STORAGE_KEYS.citizenLink) || '';
+      if (!saved) {
+        alert('먼저 경주시청 대표 홈페이지 링크를 저장해 주세요.');
+        return;
+      }
+      window.open(saved, '_blank', 'noopener');
+    }
+
+    function openEventLinkFromModal() {
+      const link = normalizeUrl(document.getElementById('eventLink').value);
+      if (!link) {
+        alert('먼저 행사 링크를 입력해 주세요.');
+        return;
+      }
+      document.getElementById('eventLink').value = link;
+      window.open(link, '_blank', 'noopener');
+    }
+
+    function openEventLink(url) {
+      const link = normalizeUrl(url);
+      if (!link) {
+        alert('저장된 링크가 없습니다.');
+        return;
+      }
+      window.open(link, '_blank', 'noopener');
+    }
+
+    function clearOCRResult() {
+      if (!confirm('선택한 이미지와 OCR 결과를 삭제하시겠습니까?')) return;
+      document.getElementById('ocrImageFile').value = '';
+      document.getElementById('ocrFileName').textContent = '선택된 이미지 없음';
+      document.getElementById('ocrTextResult').value = '';
+      document.getElementById('ocrStatus').textContent = 'OCR 내용이 삭제되었습니다.';
+    }
+
+    function getDepartmentClass(dept) {
+      if (dept === '디지털정책팀') return 'tag-policy';
+      if (dept === '정보운영팀') return 'tag-operation';
+      if (dept === '정보통신팀') return 'tag-network';
+      if (dept === '스마트통합운영팀') return 'tag-smart';
+      if (dept === '디지털보안T/F팀') return 'tag-security';
+      return 'tag-default';
+    }
+
+    function getPriorityClass(importance) {
+      if (importance === '매우높음') return 'priority-top';
+      if (importance === '높음') return 'priority-high';
+      return 'priority-normal';
+    }
+
+    function getImportanceBadge(importance) {
+      if (importance === '매우높음') {
+        return '<span class="badge" style="background:linear-gradient(135deg,#ef4444,#b91c1c);">매우 높음</span>';
+      }
+      if (importance === '높음') {
+        return '<span class="badge" style="background:linear-gradient(135deg,#fb923c,#ea580c);">높음</span>';
+      }
+      return '<span class="badge" style="background:linear-gradient(135deg,#94a3b8,#64748b);">보통</span>';
+    }
+
+    function getLunarText(dateObj) {
+      try {
+        const formatter = new Intl.DateTimeFormat('ko-KR-u-ca-chinese', {
+          month: 'numeric',
+          day: 'numeric'
+        });
+        return '음 ' + formatter.format(dateObj);
+      } catch (e) {
+        return '음력';
+      }
+    }
+
+    function getHolidayName(dateObj) {
+      const monthDay = `${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+      return fallbackSolarHolidays[monthDay] || '';
+    }
+
+    function loadSpecialMemo() {
+      const memo = localStorage.getItem(STORAGE_KEYS.memo) || '';
+      document.getElementById('specialMemo').value = memo;
+    }
+
+    function saveSpecialMemoImmediate() {
+      const memo = document.getElementById('specialMemo').value;
+      localStorage.setItem(STORAGE_KEYS.memo, memo);
+      document.getElementById('memoSaveStatus').textContent = '자동저장 완료';
+    }
+
+    function autoSaveMemo() {
+      document.getElementById('memoSaveStatus').textContent = '저장 중...';
+      clearTimeout(memoTimer);
+      memoTimer = setTimeout(() => {
+        saveSpecialMemoImmediate();
+      }, 500);
+    }
+
+    function clearSpecialMemo() {
+      if (!confirm('메모를 모두 비우시겠습니까?')) return;
+      document.getElementById('specialMemo').value = '';
+      localStorage.setItem(STORAGE_KEYS.memo, '');
+      document.getElementById('memoSaveStatus').textContent = '메모를 비웠습니다.';
+    }
+
+    function clearModalForm() {
+      document.getElementById('eventDate').value = '';
+      document.getElementById('eventTitle').value = '';
+      document.getElementById('startTime').value = '';
+      document.getElementById('endTime').value = '';
+      document.getElementById('department').value = '디지털정책팀';
+      document.getElementById('manager').value = '';
+      document.getElementById('location').value = '';
+      document.getElementById('importance').value = '보통';
+      document.getElementById('eventLink').value = '';
+      document.getElementById('eventFileName').value = '';
+      document.getElementById('eventMemo').value = '';
+      editTargetId = null;
+      document.getElementById('modalDeleteBtn').style.display = 'none';
+    }
+
+    function openModal(dateStr = '') {
+      clearModalForm();
+      document.getElementById('modalTitle').textContent = '행사 등록';
+      document.getElementById('modalSaveBtn').textContent = '저장';
+      document.getElementById('modalSaveBtn').onclick = saveEventFromModal;
+
+      if (dateStr) {
+        document.getElementById('eventDate').value = dateStr;
+      }
+
+      document.getElementById('eventModal').classList.add('show');
+    }
+
+    function openEditModal(id) {
+      const item = events.find(event => String(event.id) === String(id));
+      if (!item) return;
+
+      editTargetId = item.id;
+      document.getElementById('modalTitle').textContent = '행사 수정';
+      document.getElementById('modalSaveBtn').textContent = '수정 저장';
+      document.getElementById('modalSaveBtn').onclick = saveEventFromModal;
+      document.getElementById('modalDeleteBtn').style.display = 'inline-block';
+
+      document.getElementById('eventDate').value = item.date || '';
+      document.getElementById('eventTitle').value = item.title || '';
+      document.getElementById('startTime').value = item.startTime || '';
+      document.getElementById('endTime').value = item.endTime || '';
+      document.getElementById('department').value = item.department || '디지털정책팀';
+      document.getElementById('manager').value = item.manager || '';
+      document.getElementById('location').value = item.location || '';
+      document.getElementById('importance').value = item.importance || '보통';
+      document.getElementById('eventLink').value = item.link || '';
+      document.getElementById('eventFileName').value = item.fileName || '';
+      document.getElementById('eventMemo').value = item.memo || '';
+
+      document.getElementById('eventModal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('eventModal').classList.remove('show');
+    }
+
+    function saveEventFromModal() {
+      const date = document.getElementById('eventDate').value;
+      const title = document.getElementById('eventTitle').value.trim();
+      const startTime = document.getElementById('startTime').value;
+      const endTime = document.getElementById('endTime').value;
+      const department = document.getElementById('department').value;
+      const manager = document.getElementById('manager').value.trim();
+      const location = document.getElementById('location').value.trim();
+      const importance = document.getElementById('importance').value;
+      const link = normalizeUrl(document.getElementById('eventLink').value.trim());
+      const fileName = document.getElementById('eventFileName').value.trim();
+      const memo = document.getElementById('eventMemo').value.trim();
+
+      if (!date) {
+        alert('행사 날짜를 입력해 주세요.');
+        return;
+      }
+
+      if (!title) {
+        alert('행사명을 입력해 주세요.');
+        return;
+      }
+
+      document.getElementById('eventLink').value = link;
+
+      if (editTargetId === null) {
+        events.push({
+          id: Date.now(),
+          date,
+          title,
+          startTime,
+          endTime,
+          department,
+          manager,
+          location,
+          importance,
+          link,
+          fileName,
+          memo
+        });
+        document.getElementById('saveStatus').textContent = '행사 저장 완료';
+      } else {
+        events = events.map(item =>
+          String(item.id) === String(editTargetId)
+            ? {
+                ...item,
+                date,
+                title,
+                startTime,
+                endTime,
+                department,
+                manager,
+                location,
+                importance,
+                link,
+                fileName,
+                memo
+              }
+            : item
+        );
+        document.getElementById('saveStatus').textContent = '행사 수정 완료';
+      }
+
+      saveEvents();
+      closeModal();
+      renderAll();
+    }
+
+    function deleteEvent(id) {
+      if (!confirm('이 행사를 삭제하시겠습니까?')) return;
+      events = events.filter(item => String(item.id) !== String(id));
+      saveEvents();
+      document.getElementById('saveStatus').textContent = '행사 삭제 완료';
+      renderAll();
+    }
+
+    function deleteEventFromModal() {
+      if (editTargetId === null) return;
+      if (!confirm('이 행사를 삭제하시겠습니까?')) return;
+
+      events = events.filter(item => String(item.id) !== String(editTargetId));
+      saveEvents();
+      closeModal();
+      document.getElementById('saveStatus').textContent = '행사 삭제 완료';
+      renderAll();
+    }
+
+    function saveNotice() {
+      const title = document.getElementById('noticeTitle').value.trim();
+      const text = document.getElementById('noticeText').value.trim();
+
+      if (!title) {
+        alert('공지 제목을 입력해 주세요.');
+        return;
+      }
+
+      if (!text) {
+        alert('공지 내용을 입력해 주세요.');
+        return;
+      }
+
+      notices.unshift({
+        id: Date.now(),
+        title,
+        text,
+        date: getDateString(new Date())
+      });
+
+      saveNotices();
+      document.getElementById('noticeTitle').value = '';
+      document.getElementById('noticeText').value = '';
+      renderNotices();
+    }
+
+    function deleteNotice(id) {
+      if (!confirm('이 공지사항을 삭제하시겠습니까?')) return;
+      notices = notices.filter(item => String(item.id) !== String(id));
+      saveNotices();
+      renderNotices();
+    }
+
+    function renderNotices() {
+      const listEl = document.getElementById('noticeList');
+      listEl.innerHTML = '';
+
+      if (notices.length === 0) {
+        listEl.innerHTML = '<div class="empty-box">등록된 공지사항이 없습니다.</div>';
+        return;
+      }
+
+      notices.slice(0, 5).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'notice-item';
+        div.innerHTML = `
+          <div class="notice-title">${escapeHtml(item.title)}</div>
+          <div class="notice-date">${escapeHtml(item.date)}</div>
+          <div class="notice-text">${escapeHtml(item.text)}</div>
+          <div class="row" style="margin-top:8px;">
+            <button class="red-btn small-btn" onclick="deleteNotice('${item.id}')">삭제</button>
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function saveShare() {
+      const title = document.getElementById('shareTitle').value.trim();
+      const text = document.getElementById('shareText').value.trim();
+      const fileInput = document.getElementById('shareFile');
+      const file = fileInput.files[0];
+
+      if (!title) {
+        alert('제목을 입력해 주세요.');
+        return;
+      }
+
+      if (!text && !file) {
+        alert('공유 내용 또는 첨부파일 중 하나는 입력해 주세요.');
+        return;
+      }
+
+      let fileData = '';
+      let fileName = '';
+      let fileType = '';
+
+      if (file) {
+        fileData = await fileToBase64(file);
+        fileName = file.name;
+        fileType = file.type || '';
+      }
+
+      shares.unshift({
+        id: Date.now(),
+        title,
+        text,
+        date: getDateString(new Date()),
+        fileName,
+        fileType,
+        fileData
+      });
+
+      saveShares();
+
+      document.getElementById('shareTitle').value = '';
+      document.getElementById('shareText').value = '';
+      document.getElementById('shareFile').value = '';
+      document.getElementById('shareSelectedFileName').textContent = '선택된 파일 없음';
+
+      renderShares();
+    }
+
+    function deleteShare(id) {
+      if (!confirm('이 정보공유 글을 삭제하시겠습니까?')) return;
+      shares = shares.filter(item => String(item.id) !== String(id));
+      saveShares();
+      renderShares();
+    }
+
+    function downloadSharedFile(id) {
+      const item = shares.find(share => String(share.id) === String(id));
+      if (!item || !item.fileData) return;
+
+      const link = document.createElement('a');
+      link.href = item.fileData;
+      link.download = item.fileName || '첨부파일';
+      link.click();
+    }
+
+    function renderShares() {
+      const listEl = document.getElementById('shareList');
+      listEl.innerHTML = '';
+
+      if (shares.length === 0) {
+        listEl.innerHTML = '<div class="empty-box">등록된 정보공유가 없습니다.</div>';
+        return;
+      }
+
+      shares.slice(0, 10).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'share-item';
+        div.innerHTML = `
+          <div class="share-title">${escapeHtml(item.title)}</div>
+          <div class="share-date">${escapeHtml(item.date)}</div>
+          <div class="share-text">${escapeHtml(item.text || '')}</div>
+          ${item.fileName ? `<div class="file-name">첨부: ${escapeHtml(item.fileName)}</div>` : ''}
+          ${item.fileData ? `<button class="sky-btn small-btn" style="margin-top:8px;" onclick="downloadSharedFile('${item.id}')">첨부파일 다운로드</button>` : ''}
+          <div class="row" style="margin-top:8px;">
+            <button class="red-btn small-btn" onclick="deleteShare('${item.id}')">삭제</button>
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    async function runOCR() {
+      const fileInput = document.getElementById('ocrImageFile');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('이미지 파일을 먼저 선택해 주세요.');
+        return;
+      }
+
+      document.getElementById('ocrStatus').textContent = 'OCR 실행 중...';
+      document.getElementById('ocrFileName').textContent = file.name;
+
+      try {
+        const result = await Tesseract.recognize(file, 'kor+eng', {
+          logger: m => {
+            if (m.status) {
+              const progressText = m.progress ? ` (${Math.round(m.progress * 100)}%)` : '';
+              document.getElementById('ocrStatus').textContent = `OCR 실행 중: ${m.status}${progressText}`;
+            }
+          }
+        });
+
+        const text = (result.data.text || '').trim();
+        document.getElementById('ocrTextResult').value = text;
+        document.getElementById('ocrStatus').textContent = 'OCR 완료';
+      } catch (e) {
+        console.error(e);
+        document.getElementById('ocrStatus').textContent = 'OCR 실패';
+        alert('이미지 글자 읽기에 실패했습니다.');
+      }
+    }
+
+    function extractDateFromText(text) {
+      const fullDate1 = text.match(/(20\d{2})[.\-/년\s]+(\d{1,2})[.\-/월\s]+(\d{1,2})/);
+      if (fullDate1) {
+        const y = fullDate1[1];
+        const m = String(fullDate1[2]).padStart(2, '0');
+        const d = String(fullDate1[3]).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      const md = text.match(/(\d{1,2})[월\s]+(\d{1,2})[일]?/);
+      if (md) {
+        const y = new Date().getFullYear();
+        const m = String(md[1]).padStart(2, '0');
+        const d = String(md[2]).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      return '';
+    }
+
+    function extractTimeFromText(text) {
+      const time1 = text.match(/(\d{1,2})[:시]\s?(\d{2})?/);
+      if (time1) {
+        let hour = parseInt(time1[1], 10);
+        let minute = time1[2] ? time1[2] : '00';
+
+        if (/오후/.test(text) && hour < 12) hour += 12;
+        if (/오전/.test(text) && hour === 12) hour = 0;
+
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      }
+      return '';
+    }
+
+    function extractDepartmentFromText(text) {
+      const teams = ['디지털정책팀', '정보운영팀', '정보통신팀', '스마트통합운영팀', '디지털보안T/F팀'];
+      for (const team of teams) {
+        if (text.includes(team)) return team;
+      }
+      return '디지털정책팀';
+    }
+
+    function extractLocationFromText(text) {
+      const match = text.match(/장소\s*[:：]\s*(.+)/);
+      if (match) return match[1].split('\n')[0].trim();
+      return '';
+    }
+
+    function extractManagerFromText(text) {
+      const match = text.match(/담당\s*[:：]\s*(.+)/);
+      if (match) return match[1].split('\n')[0].trim();
+      return '';
+    }
+
+    function extractTitleFromText(text) {
+      const lines = text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      for (const line of lines) {
+        if (
+          !line.includes('일시') &&
+          !line.includes('장소') &&
+          !line.includes('담당') &&
+          !line.match(/20\d{2}/) &&
+          !line.match(/\d{1,2}[:시]/)
+        ) {
+          return line;
+        }
+      }
+
+      return lines[0] || '';
+    }
+
+    function applyOCRToEventForm() {
+      const text = document.getElementById('ocrTextResult').value.trim();
+
+      if (!text) {
+        alert('먼저 OCR로 텍스트를 읽어 주세요.');
+        return;
+      }
+
+      const date = extractDateFromText(text);
+      const startTime = extractTimeFromText(text);
+      const department = extractDepartmentFromText(text);
+      const location = extractLocationFromText(text);
+      const manager = extractManagerFromText(text);
+      const title = extractTitleFromText(text);
+
+      openModal();
+
+      if (date) document.getElementById('eventDate').value = date;
+      if (startTime) document.getElementById('startTime').value = startTime;
+      if (department) document.getElementById('department').value = department;
+      if (location) document.getElementById('location').value = location;
+      if (manager) document.getElementById('manager').value = manager;
+      if (title) document.getElementById('eventTitle').value = title;
+
+      document.getElementById('eventMemo').value = text;
+      document.getElementById('saveStatus').textContent = 'OCR 결과를 행사등록창에 반영했습니다.';
+    }
+
+    function getFilteredEvents() {
+      const dept = document.getElementById('filterDepartment').value;
+      const keyword = document.getElementById('searchKeyword').value.trim().toLowerCase();
+
+      return events.filter(item => {
+        const deptMatch = dept === '전체' || item.department === dept;
+        const keywordMatch =
+          !keyword ||
+          (item.title || '').toLowerCase().includes(keyword) ||
+          (item.manager || '').toLowerCase().includes(keyword) ||
+          (item.location || '').toLowerCase().includes(keyword) ||
+          (item.memo || '').toLowerCase().includes(keyword) ||
+          (item.fileName || '').toLowerCase().includes(keyword) ||
+          (item.link || '').toLowerCase().includes(keyword);
+
+        return deptMatch && keywordMatch;
+      });
+    }
+
+    function renderSummary() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const todayStr = getDateString(new Date());
+
+      const filtered = getFilteredEvents();
+
+      const monthEvents = filtered.filter(item => {
+        const d = new Date(item.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      });
+
+      const todayEvents = filtered.filter(item => item.date === todayStr);
+      const importantEvents = monthEvents.filter(item => item.importance === '높음' || item.importance === '매우높음');
+
+      document.getElementById('monthCount').textContent = `${monthEvents.length}건`;
+      document.getElementById('todayCount').textContent = `${todayEvents.length}건`;
+      document.getElementById('importantCount').textContent = `${importantEvents.length}건`;
+    }
+
+    function renderTodayEvents() {
+      const listEl = document.getElementById('todayEventList');
+      const todayStr = getDateString(new Date());
+
+      const todayEvents = events
+        .filter(item => item.date === todayStr)
+        .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+      listEl.innerHTML = '';
+
+      if (todayEvents.length === 0) {
+        listEl.innerHTML = '<div class="empty-box">오늘 등록된 행사가 없습니다.</div>';
+        return;
+      }
+
+      todayEvents.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'mini-item';
+        div.innerHTML = `
+          <div class="mini-title">${escapeHtml(item.title)}</div>
+          <div class="mini-meta">
+            ${item.startTime || '-'}${item.endTime ? ' ~ ' + item.endTime : ''}<br>
+            ${escapeHtml(item.department)} / ${escapeHtml(item.manager || '-')}<br>
+            ${escapeHtml(item.location || '-')}
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <button class="orange-btn small-btn" onclick="openEditModal('${item.id}')">수정</button>
+            ${item.link ? `<button class="blue-btn small-btn" onclick="openEventLink('${escapeJsString(item.link)}')">링크 열기</button>` : ''}
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    function renderWeekEvents() {
+      const listEl = document.getElementById('weekEventList');
+      listEl.innerHTML = '';
+
+      const today = new Date();
+      const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+
+      const weekEvents = events
+        .filter(item => {
+          const d = new Date(item.date);
+          return d >= start && d <= end;
+        })
+        .sort((a, b) => {
+          if (a.date === b.date) return (a.startTime || '').localeCompare(b.startTime || '');
+          return a.date.localeCompare(b.date);
+        });
+
+      if (weekEvents.length === 0) {
+        listEl.innerHTML = '<div class="empty-box">이번 주 예정된 행사가 없습니다.</div>';
+        return;
+      }
+
+      weekEvents.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'mini-item';
+        div.innerHTML = `
+          <div class="mini-title">${escapeHtml(item.title)}</div>
+          <div class="mini-meta">
+            ${escapeHtml(item.date)} ${item.startTime || ''}<br>
+            ${escapeHtml(item.department)} / ${escapeHtml(item.manager || '-')}
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <button class="orange-btn small-btn" onclick="openEditModal('${item.id}')">수정</button>
+            ${item.link ? `<button class="blue-btn small-btn" onclick="openEventLink('${escapeJsString(item.link)}')">링크 열기</button>` : ''}
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const title = document.getElementById('calendarTitle');
+      grid.innerHTML = '';
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      title.textContent = `${year}년 ${month + 1}월`;
+
+      const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+      weekdays.forEach((day, index) => {
+        const div = document.createElement('div');
+        div.className = 'calendar-weekday';
+        if (index === 0) div.classList.add('sun');
+        if (index === 6) div.classList.add('sat');
+        div.textContent = day;
+        grid.appendChild(div);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      const todayStr = getDateString(new Date());
+      const filtered = getFilteredEvents();
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-day empty';
+        grid.appendChild(empty);
+      }
+
+      for (let day = 1; day <= lastDate; day++) {
+        const dateObj = new Date(year, month, day);
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const week = dateObj.getDay();
+        const holidayName = getHolidayName(dateObj);
+
+        const dayEvents = filtered
+          .filter(item => item.date === dateStr)
+          .sort((a, b) => {
+            const importanceOrder = { '매우높음': 0, '높음': 1, '보통': 2 };
+            const diff = (importanceOrder[a.importance] ?? 9) - (importanceOrder[b.importance] ?? 9);
+            if (diff !== 0) return diff;
+            return (a.startTime || '').localeCompare(b.startTime || '');
+          });
+
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+
+        if (dateStr === todayStr) dayDiv.classList.add('today');
+        if (holidayName) dayDiv.classList.add('holiday-day');
+
+        const tagsHtml = dayEvents.slice(0, 3).map(item => {
+          return `
+            <div
+              class="event-tag ${getDepartmentClass(item.department)} ${getPriorityClass(item.importance)}"
+              onclick="event.stopPropagation(); openEditModal('${item.id}')"
+              title="${item.link ? '클릭하면 수정창이 열리며 링크도 저장되어 있습니다' : '클릭하면 수정창이 열립니다'}"
+            >
+              ${escapeHtml(item.title)}
+            </div>
+          `;
+        }).join('');
+
+        const moreHtml = dayEvents.length > 3
+          ? `<div class="status" style="margin:0; font-size:11px;">외 ${dayEvents.length - 3}건</div>`
+          : '';
+
+        dayDiv.innerHTML = `
+          <div class="solar-date ${week === 0 || holidayName ? 'sun' : week === 6 ? 'sat' : ''}">${day}</div>
+          <div class="lunar-date">${getLunarText(dateObj)}</div>
+          ${holidayName ? `<div class="holiday-name">${escapeHtml(holidayName)}</div>` : ''}
+          ${tagsHtml}
+          ${moreHtml}
+        `;
+
+        dayDiv.addEventListener('click', () => {
+          openModal(dateStr);
+          document.getElementById('saveStatus').textContent = '날짜 선택 완료';
+        });
+
+        grid.appendChild(dayDiv);
+      }
+    }
+
+    function renderEventList() {
+      const listEl = document.getElementById('eventList');
+      listEl.innerHTML = '';
+
+      const filtered = getFilteredEvents().sort((a, b) => {
+        const importanceOrder = { '매우높음': 0, '높음': 1, '보통': 2 };
+        const diff = (importanceOrder[a.importance] ?? 9) - (importanceOrder[b.importance] ?? 9);
+        if (diff !== 0) return diff;
+        if (a.date === b.date) return (a.startTime || '').localeCompare(b.startTime || '');
+        return a.date.localeCompare(b.date);
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <tr>
+            <td colspan="11">등록된 행사 내역이 없습니다.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const linkHtml = item.link
+          ? `<button class="blue-btn small-btn" onclick="openEventLink('${escapeJsString(item.link)}')">열기</button>`
+          : '-';
+
+        const fileNameHtml = item.fileName ? escapeHtml(item.fileName) : '-';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.startTime || '-'}${item.endTime ? ' ~ ' + item.endTime : ''}</td>
+          <td><button class="ghost-btn small-btn" onclick="openEditModal('${item.id}')">${escapeHtml(item.title)}</button></td>
+          <td><span class="badge ${getDepartmentClass(item.department)}">${escapeHtml(item.department)}</span></td>
+          <td>${escapeHtml(item.manager || '-')}</td>
+          <td>${escapeHtml(item.location || '-')}</td>
+          <td>${getImportanceBadge(item.importance)}</td>
+          <td>${linkHtml}</td>
+          <td>${fileNameHtml}</td>
+          <td>${escapeHtml(item.memo || '-')}</td>
+          <td>
+            <div class="action-wrap">
+              <button class="orange-btn small-btn" onclick="openEditModal('${item.id}')">수정</button>
+              <button class="red-btn small-btn" onclick="deleteEvent('${item.id}')">삭제</button>
+            </div>
+          </td>
+        `;
+        listEl.appendChild(tr);
+      });
+    }
+
+    function changeMonth(offset) {
+      currentDate.setMonth(currentDate.getMonth() + offset);
+      renderAll();
+    }
+
+    function resetFilter() {
+      document.getElementById('filterDepartment').value = '전체';
+      document.getElementById('searchKeyword').value = '';
+      renderAll();
+    }
+
+    function downloadCSV() {
+      if (events.length === 0) {
+        alert('다운로드할 행사 내역이 없습니다.');
+        return;
+      }
+
+      const header = ['날짜', '시작시간', '종료시간', '행사명', '팀', '담당자', '장소', '중요도', '링크', '첨부파일명', '비고'];
+      const rows = events.map(item => [
+        item.date,
+        item.startTime || '',
+        item.endTime || '',
+        item.title,
+        item.department,
+        item.manager || '',
+        item.location || '',
+        item.importance || '',
+        item.link || '',
+        item.fileName || '',
+        item.memo || ''
+      ]);
+
+      const csvContent = [header, ...rows]
+        .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = '디지털정책과_행사일정표.csv';
+      link.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeJsString(value) {
+      return String(value)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '');
+    }
+
+    function renderAll() {
+      renderSummary();
+      renderTodayEvents();
+      renderWeekEvents();
+      renderCalendar();
+      renderEventList();
+      renderNotices();
+      renderShares();
+      updateCitizenLinkStatus();
+    }
+
+    document.getElementById('specialMemo').addEventListener('input', autoSaveMemo);
+
+    document.getElementById('shareFile').addEventListener('change', function () {
+      const file = this.files[0];
+      document.getElementById('shareSelectedFileName').textContent = file ? file.name : '선택된 파일 없음';
+    });
+
+    document.getElementById('ocrImageFile').addEventListener('change', function () {
+      const file = this.files[0];
+      document.getElementById('ocrFileName').textContent = file ? file.name : '선택된 이미지 없음';
+    });
+
+    updateTodayChip();
+    loadSpecialMemo();
+    loadCitizenLink();
+    renderAll();
+  </script>
+</body>
+</html>
